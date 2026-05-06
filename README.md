@@ -1,3 +1,5 @@
+https://devakashtiwari.github.io/Smart-Study-Planner/
+
 1. Introduction
 
 In today’s academic environment, students often face difficulty in managing their study schedules and completing tasks on time. Traditional planning methods such as notebooks and paper schedules are difficult to maintain and update regularly.
