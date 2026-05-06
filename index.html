@@ -1,0 +1,1639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Study Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0e0f14;
+    --surface: #161820;
+    --surface2: #1e2029;
+    --surface3: #252733;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(255,255,255,0.13);
+    --text: #e8e9f0;
+    --text2: #9194a8;
+    --text3: #5c5f73;
+    --gold: #f0c060;
+    --gold-dim: rgba(240,192,96,0.15);
+    --teal: #4dd9ac;
+    --teal-dim: rgba(77,217,172,0.12);
+    --coral: #f07060;
+    --coral-dim: rgba(240,112,96,0.12);
+    --blue: #60a0f0;
+    --blue-dim: rgba(96,160,240,0.12);
+    --purple: #a078f0;
+    --purple-dim: rgba(160,120,240,0.12);
+    --radius: 12px;
+    --radius-sm: 7px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+  }
+
+  /* ── Layout ── */
+  .app { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+
+  /* ── Sidebar ── */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 28px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--gold-dim);
+    border: 1px solid rgba(240,192,96,0.3);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 17px;
+  }
+  .logo-text {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+  .logo-text span { color: var(--gold); }
+
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text2);
+    font-size: 14px;
+    font-weight: 400;
+    transition: all 0.15s;
+    user-select: none;
+    border: 1px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: var(--surface2); }
+  .nav-item.active {
+    color: var(--gold);
+    background: var(--gold-dim);
+    border-color: rgba(240,192,96,0.2);
+    font-weight: 500;
+  }
+  .nav-icon { font-size: 15px; width: 20px; text-align: center; }
+
+  .sidebar-section-label {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    padding: 0 12px;
+    margin-bottom: 2px;
+  }
+
+  .subject-pills { display: flex; flex-direction: column; gap: 4px; }
+  .subject-pill {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .subject-pill:hover { background: var(--surface2); }
+  .subject-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .subject-pill .days-left {
+    margin-left: auto;
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+  .days-left.urgent { color: var(--coral); }
+  .days-left.soon { color: var(--gold); }
+
+  .add-subject-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px dashed var(--border2);
+    color: var(--text3);
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    width: 100%;
+    text-align: left;
+  }
+  .add-subject-btn:hover {
+    border-color: var(--gold);
+    color: var(--gold);
+    background: var(--gold-dim);
+  }
+
+  /* ── Main ── */
+  .main { padding: 32px 36px; overflow-y: auto; }
+
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ── Page Header ── */
+  .page-header { margin-bottom: 28px; }
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 28px;
+    font-weight: 400;
+    letter-spacing: -0.5px;
+    margin-bottom: 4px;
+  }
+  .page-subtitle { color: var(--text2); font-size: 14px; }
+
+  /* ── Stats Cards ── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .stat-label {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 8px;
+  }
+  .stat-value {
+    font-family: 'DM Serif Display', serif;
+    font-size: 30px;
+    font-weight: 400;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .stat-meta { font-size: 12px; color: var(--text3); }
+
+  /* ── Section ── */
+  .section { margin-bottom: 28px; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .section-title { font-size: 14px; font-weight: 500; color: var(--text2); letter-spacing: 0.3px; }
+
+  /* ── Today's Plan ── */
+  .today-grid {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 18px;
+  }
+
+  .sessions-list { display: flex; flex-direction: column; gap: 10px; }
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    transition: border-color 0.15s;
+  }
+  .session-card:hover { border-color: var(--border2); }
+  .session-card.done { opacity: 0.45; }
+  .session-card.done .session-title { text-decoration: line-through; }
+
+  .session-check {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border2);
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+    font-size: 10px;
+  }
+  .session-check:hover { border-color: var(--teal); }
+  .session-card.done .session-check {
+    background: var(--teal);
+    border-color: var(--teal);
+    color: #0e0f14;
+    font-weight: 700;
+  }
+
+  .session-color-bar {
+    width: 3px;
+    height: 36px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .session-info { flex: 1; }
+  .session-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .session-meta { font-size: 12px; color: var(--text3); }
+  .session-type-badge {
+    font-size: 11px;
+    padding: 3px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .badge-review { background: var(--blue-dim); color: var(--blue); }
+  .badge-learn { background: var(--purple-dim); color: var(--purple); }
+  .badge-practice { background: var(--teal-dim); color: var(--teal); }
+
+  .session-timer-btn {
+    background: transparent;
+    border: 1px solid var(--border2);
+    color: var(--text2);
+    padding: 5px 12px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.15s;
+  }
+  .session-timer-btn:hover { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Pomodoro ── */
+  .pomodoro-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px 20px;
+    text-align: center;
+  }
+  .pomodoro-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+  }
+  .pomodoro-ring {
+    position: relative;
+    width: 130px;
+    height: 130px;
+    margin: 0 auto 16px;
+  }
+  .pomodoro-ring svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--surface3); stroke-width: 7; }
+  .ring-progress {
+    fill: none;
+    stroke-width: 7;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .pomodoro-time {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .pomodoro-subject-tag {
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 14px;
+    height: 16px;
+  }
+  .pomodoro-controls { display: flex; justify-content: center; gap: 10px; }
+  .pomo-btn {
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid;
+  }
+  .pomo-btn.primary {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0e0f14;
+    font-weight: 600;
+  }
+  .pomo-btn.primary:hover { opacity: 0.88; }
+  .pomo-btn.secondary {
+    background: transparent;
+    border-color: var(--border2);
+    color: var(--text2);
+  }
+  .pomo-btn.secondary:hover { border-color: var(--text2); color: var(--text); }
+  .pomo-mode-tabs {
+    display: flex; gap: 6px;
+    justify-content: center;
+    margin-bottom: 14px;
+  }
+  .pomo-mode-tab {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    color: var(--text3);
+    transition: all 0.15s;
+  }
+  .pomo-mode-tab.active { border-color: var(--gold); color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Subjects Page ── */
+  .subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+  }
+  .subject-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .subject-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .subject-card-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 14px; }
+  .subject-name { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+  .subject-exam-date { font-size: 12px; color: var(--text3); }
+  .subject-difficulty-badge {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+  .diff-easy { background: var(--teal-dim); color: var(--teal); }
+  .diff-medium { background: var(--gold-dim); color: var(--gold); }
+  .diff-hard { background: var(--coral-dim); color: var(--coral); }
+
+  .progress-bar-container {
+    background: var(--surface3);
+    border-radius: 4px;
+    height: 5px;
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+  .subject-stats {
+    display: flex; justify-content: space-between;
+    font-size: 12px;
+    color: var(--text3);
+    margin-bottom: 14px;
+  }
+  .subject-actions { display: flex; gap: 8px; }
+  .subject-action-btn {
+    flex: 1;
+    padding: 7px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Outfit', sans-serif;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all 0.15s;
+  }
+  .subject-action-btn:hover { border-color: var(--text2); color: var(--text); }
+  .subject-action-btn.danger:hover { border-color: var(--coral); color: var(--coral); }
+
+  /* ── Schedule Page ── */
+  .week-nav {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 18px;
+  }
+  .week-nav-btn {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text2);
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.15s;
+  }
+  .week-nav-btn:hover { border-color: var(--border2); color: var(--text); }
+  .week-range { font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text2); }
+
+  .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 10px; }
+  .day-col {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-height: 200px;
+    overflow: hidden;
+  }
+  .day-col.today { border-color: rgba(240,192,96,0.3); }
+  .day-header {
+    padding: 10px 10px 8px;
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+  }
+  .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text3); margin-bottom: 2px; }
+  .day-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 18px;
+    color: var(--text2);
+  }
+  .day-col.today .day-num {
+    color: var(--gold);
+    background: var(--gold-dim);
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto;
+    font-size: 14px;
+  }
+  .day-sessions { padding: 8px; display: flex; flex-direction: column; gap: 5px; }
+  .cal-session {
+    border-radius: 5px;
+    padding: 5px 7px;
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1.3;
+    cursor: default;
+  }
+
+  /* ── AI Insights ── */
+  .insights-list { display: flex; flex-direction: column; gap: 10px; }
+  .insight-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid;
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    display: flex; gap: 12px; align-items: flex-start;
+  }
+  .insight-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+  .insight-text { font-size: 13px; line-height: 1.5; color: var(--text2); }
+  .insight-text strong { color: var(--text); font-weight: 500; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 100;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.2s;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: 16px;
+    width: 460px;
+    padding: 28px;
+    transform: translateY(10px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 22px;
+    margin-bottom: 22px;
+  }
+
+  .form-row { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 500; color: var(--text2); margin-bottom: 6px; display: block; letter-spacing: 0.3px; }
+  .form-input, .form-select {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-input:focus, .form-select:focus { border-color: var(--gold); }
+  .form-select option { background: #1e2029; }
+  .form-input::placeholder { color: var(--text3); }
+
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; }
+  .color-option {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    color: #0e0f14;
+    font-weight: 700;
+  }
+  .color-option.selected { border-color: white; }
+
+  .form-row-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 24px; }
+  .btn {
+    padding: 9px 20px;
+    border-radius: var(--radius-sm);
+    font-size: 14px;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: 1px solid;
+    font-weight: 500;
+  }
+  .btn-primary { background: var(--gold); border-color: var(--gold); color: #0e0f14; }
+  .btn-primary:hover { opacity: 0.88; }
+  .btn-ghost { background: transparent; border-color: var(--border2); color: var(--text2); }
+  .btn-ghost:hover { border-color: var(--text2); color: var(--text); }
+
+  /* ── Empty State ── */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text3);
+  }
+  .empty-state-icon { font-size: 40px; margin-bottom: 12px; }
+  .empty-state h3 { font-size: 16px; font-weight: 500; color: var(--text2); margin-bottom: 6px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; max-width: 280px; margin: 0 auto; }
+
+  /* ── AI Plan Generate Button ── */
+  .generate-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 9px 18px;
+    background: linear-gradient(135deg, var(--gold-dim), var(--purple-dim));
+    border: 1px solid rgba(240,192,96,0.3);
+    border-radius: var(--radius-sm);
+    color: var(--gold);
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .generate-btn:hover { border-color: var(--gold); background: var(--gold-dim); }
+
+  /* ── Scrollbar ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--surface3); border-radius: 3px; }
+
+  /* ── Top bar (search + theme) ── */
+  .main-topbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: -8px 0 24px;
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    max-width: 420px;
+    position: relative;
+  }
+  .search-wrap .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 13px;
+    color: var(--text3);
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px 10px 36px;
+    font-size: 14px;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .search-input::placeholder { color: var(--text3); }
+  .search-input:focus { border-color: var(--gold); }
+  .theme-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 13px;
+    font-family: 'Outfit', sans-serif;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .theme-toggle:hover {
+    border-color: var(--border2);
+    color: var(--text);
+  }
+
+  /* ── Light theme ── */
+  [data-theme="light"] {
+    --bg: #f4f5f9;
+    --surface: #ffffff;
+    --surface2: #eceef4;
+    --surface3: #dfe2ec;
+    --border: rgba(15, 18, 30, 0.08);
+    --border2: rgba(15, 18, 30, 0.14);
+    --text: #141620;
+    --text2: #4a5068;
+    --text3: #8b91a8;
+    --gold-dim: rgba(200, 150, 40, 0.18);
+    --teal-dim: rgba(45, 170, 130, 0.15);
+    --coral-dim: rgba(220, 90, 75, 0.12);
+    --blue-dim: rgba(50, 120, 210, 0.12);
+    --purple-dim: rgba(130, 90, 200, 0.12);
+  }
+  [data-theme="light"] body {
+    background: var(--bg);
+  }
+  [data-theme="light"] .session-card.done .session-check {
+    color: #fff;
+  }
+  [data-theme="light"] .pomo-btn.primary {
+    color: #141620;
+  }
+  [data-theme="light"] .btn-primary {
+    color: #141620;
+  }
+  [data-theme="light"] .color-option.selected::after {
+    color: #fff;
+  }
+  [data-theme="light"] .modal-overlay {
+    background: rgba(20, 22, 32, 0.45);
+  }
+  [data-theme="light"] .form-select option {
+    background: #eceef4;
+    color: #141620;
+  }
+
+  /* ── Hover toast ── */
+  .toast {
+    position: fixed;
+    bottom: 24px; right: 24px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    padding: 12px 18px;
+    font-size: 13px;
+    color: var(--text);
+    z-index: 200;
+    transform: translateY(60px);
+    opacity: 0;
+    transition: all 0.25s ease;
+    max-width: 280px;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { border-color: rgba(77,217,172,0.3); }
+  .toast.error { border-color: rgba(240,112,96,0.3); }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-icon">📖</div>
+      <div class="logo-text">Study<span>AI</span></div>
+    </div>
+
+    <nav class="nav">
+      <div class="nav-item active" data-page="dashboard" onclick="navigate('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="subjects" onclick="navigate('subjects')">
+        <span class="nav-icon">◉</span> My Subjects
+      </div>
+      <div class="nav-item" data-page="schedule" onclick="navigate('schedule')">
+        <span class="nav-icon">▦</span> Weekly Schedule
+      </div>
+      <div class="nav-item" data-page="insights" onclick="navigate('insights')">
+        <span class="nav-icon">◈</span> AI Insights
+      </div>
+    </nav>
+
+    <div>
+      <div class="sidebar-section-label" style="margin-bottom:10px;">Subjects</div>
+      <div class="subject-pills" id="sidebar-subjects"></div>
+      <button class="add-subject-btn" onclick="openModal()" style="margin-top:8px;">
+        + Add Subject
+      </button>
+    </div>
+
+    <div style="margin-top:auto; font-size:11px; color:var(--text3); padding:0 12px;">
+      <div id="sb-streak" style="margin-bottom:4px;">🔥 <span id="streak-count">0</span> day streak</div>
+      <div id="sb-today">📅 <span id="today-date"></span></div>
+    </div>
+  </aside>
+
+  <!-- ── Main Content ── -->
+  <main class="main">
+    <div class="main-topbar">
+      <div class="search-wrap">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input type="search" class="search-input" id="global-search" placeholder="Search subjects, sessions, insights…" autocomplete="off" aria-label="Search">
+      </div>
+      <button type="button" class="theme-toggle" id="theme-toggle" title="Toggle light/dark theme">
+        <span id="theme-toggle-icon">☀️</span>
+        <span id="theme-toggle-label">Light</span>
+      </button>
+    </div>
+
+    <!-- ─ Dashboard ─ -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Good <span id="greeting-time">morning</span> 👋</div>
+        <div class="page-subtitle">Here's your study overview for today</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Subjects</div>
+          <div class="stat-value" id="stat-subjects" style="color:var(--blue);">0</div>
+          <div class="stat-meta">being tracked</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Today's Hours</div>
+          <div class="stat-value" id="stat-hours" style="color:var(--teal);">0h</div>
+          <div class="stat-meta" id="stat-hours-meta">of planned study</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Sessions Done</div>
+          <div class="stat-value" id="stat-done" style="color:var(--gold);">0</div>
+          <div class="stat-meta" id="stat-done-meta">today</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Next Exam</div>
+          <div class="stat-value" id="stat-next-exam" style="color:var(--coral); font-size:18px; margin-top:6px;">—</div>
+          <div class="stat-meta" id="stat-next-exam-meta">no exams scheduled</div>
+        </div>
+      </div>
+
+      <div class="today-grid">
+        <div>
+          <div class="section">
+            <div class="section-header">
+              <div class="section-title">TODAY'S STUDY PLAN</div>
+              <button class="generate-btn" onclick="generatePlan()">✦ Generate AI Plan</button>
+            </div>
+            <div class="sessions-list" id="today-sessions">
+              <div class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No sessions yet</h3>
+                <p>Add subjects and click "Generate AI Plan" to get a personalized study schedule.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <!-- Pomodoro Timer -->
+          <div class="section">
+            <div class="section-title" style="margin-bottom:14px;">FOCUS TIMER</div>
+            <div class="pomodoro-card">
+              <div class="pomo-mode-tabs">
+                <div class="pomo-mode-tab active" onclick="setPomodoroMode('work',25)">Focus</div>
+                <div class="pomo-mode-tab" onclick="setPomodoroMode('short',5)">Short Break</div>
+                <div class="pomo-mode-tab" onclick="setPomodoroMode('long',15)">Long Break</div>
+              </div>
+              <div class="pomodoro-ring">
+                <svg viewBox="0 0 130 130" width="130" height="130">
+                  <circle class="ring-bg" cx="65" cy="65" r="58"/>
+                  <circle class="ring-progress" id="pomo-ring" cx="65" cy="65" r="58"
+                    stroke="var(--gold)"
+                    stroke-dasharray="364.4"
+                    stroke-dashoffset="0"/>
+                </svg>
+                <div class="pomodoro-time" id="pomo-display">25:00</div>
+              </div>
+              <div class="pomodoro-subject-tag" id="pomo-subject">Select a session to link timer</div>
+              <div class="pomodoro-controls">
+                <button class="pomo-btn primary" id="pomo-start-btn" onclick="togglePomodoro()">Start</button>
+                <button class="pomo-btn secondary" onclick="resetPomodoro()">Reset</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ Subjects ─ -->
+    <div class="page" id="page-subjects">
+      <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;">
+        <div>
+          <div class="page-title">My Subjects</div>
+          <div class="page-subtitle">Manage your courses and exam dates</div>
+        </div>
+        <button class="btn btn-primary" onclick="openModal()">+ Add Subject</button>
+      </div>
+      <div class="subjects-grid" id="subjects-grid">
+        <div class="empty-state" style="grid-column:1/-1;">
+          <div class="empty-state-icon">📚</div>
+          <h3>No subjects added</h3>
+          <p>Add your first subject to start building your study plan.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─ Schedule ─ -->
+    <div class="page" id="page-schedule">
+      <div class="page-header">
+        <div class="page-title">Weekly Schedule</div>
+        <div class="page-subtitle">Your AI-generated study sessions across the week</div>
+      </div>
+      <div class="week-nav">
+        <button class="week-nav-btn" onclick="shiftWeek(-1)">← Prev</button>
+        <span class="week-range" id="week-range-label">—</span>
+        <button class="week-nav-btn" onclick="shiftWeek(1)">Next →</button>
+        <button class="generate-btn" onclick="generatePlan()" style="margin-left:auto;">✦ Generate Plan</button>
+      </div>
+      <div class="week-grid" id="week-grid"></div>
+    </div>
+
+    <!-- ─ AI Insights ─ -->
+    <div class="page" id="page-insights">
+      <div class="page-header">
+        <div class="page-title">AI Insights</div>
+        <div class="page-subtitle">Personalized recommendations based on your schedule</div>
+      </div>
+      <div class="insights-list" id="insights-list">
+        <div class="empty-state">
+          <div class="empty-state-icon">🧠</div>
+          <h3>Add subjects to get insights</h3>
+          <p>Once you add subjects and generate a plan, your AI tutor will give you personalized study tips.</p>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── Add Subject Modal ── -->
+<div class="modal-overlay" id="modal" onclick="closeModalOnBg(event)">
+  <div class="modal">
+    <div class="modal-title">Add New Subject</div>
+    <div class="form-row">
+      <label class="form-label">Subject Name</label>
+      <input class="form-input" id="f-name" type="text" placeholder="e.g. Mathematics, Physics...">
+    </div>
+    <div class="form-row-grid">
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Exam Date</label>
+        <input class="form-input" id="f-date" type="date">
+      </div>
+      <div class="form-row" style="margin-bottom:0">
+        <label class="form-label">Study Hours Needed</label>
+        <input class="form-input" id="f-hours" type="number" min="1" max="200" placeholder="e.g. 40">
+      </div>
+    </div>
+    <div class="form-row" style="margin-top:16px;">
+      <label class="form-label">Difficulty</label>
+      <select class="form-select" id="f-diff">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Color</label>
+      <div class="color-picker" id="color-picker">
+        <div class="color-option selected" data-color="#f0c060" style="background:#f0c060;"></div>
+        <div class="color-option" data-color="#4dd9ac" style="background:#4dd9ac;"></div>
+        <div class="color-option" data-color="#60a0f0" style="background:#60a0f0;"></div>
+        <div class="color-option" data-color="#f07060" style="background:#f07060;"></div>
+        <div class="color-option" data-color="#a078f0" style="background:#a078f0;"></div>
+        <div class="color-option" data-color="#f090c0" style="background:#f090c0;"></div>
+        <div class="color-option" data-color="#70d0f0" style="background:#70d0f0;"></div>
+        <div class="color-option" data-color="#90d070" style="background:#90d070;"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addSubject()">Add Subject</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ── -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── State ──
+let state = {
+  subjects: JSON.parse(localStorage.getItem('sp_subjects') || '[]'),
+  plan: JSON.parse(localStorage.getItem('sp_plan') || '[]'),
+  streak: parseInt(localStorage.getItem('sp_streak') || '0'),
+  lastStudied: localStorage.getItem('sp_lastStudied') || '',
+  completedToday: JSON.parse(localStorage.getItem('sp_completedToday') || '[]'),
+  selectedColor: '#f0c060',
+  weekOffset: 0,
+  theme: localStorage.getItem('sp_theme') || 'dark',
+  searchQuery: '',
+};
+
+// ── Helpers ──
+function save() {
+  localStorage.setItem('sp_subjects', JSON.stringify(state.subjects));
+  localStorage.setItem('sp_plan', JSON.stringify(state.plan));
+  localStorage.setItem('sp_streak', state.streak);
+  localStorage.setItem('sp_lastStudied', state.lastStudied);
+  localStorage.setItem('sp_completedToday', JSON.stringify(state.completedToday));
+}
+
+function today() {
+  return new Date().toISOString().split('T')[0];
+}
+
+function daysUntil(dateStr) {
+  const diff = new Date(dateStr) - new Date(today());
+  return Math.ceil(diff / 86400000);
+}
+
+function fmtDate(dateStr) {
+  return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+function escapeHtml(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function escapeAttr(str) {
+  return escapeHtml(str).replace(/"/g, '&quot;');
+}
+
+function getSearchNeedle() {
+  return (state.searchQuery || '').trim().toLowerCase();
+}
+
+function matchesSearch(text, needle) {
+  if (!needle) return true;
+  return String(text || '').toLowerCase().includes(needle);
+}
+
+function applyTheme() {
+  document.documentElement.setAttribute('data-theme', state.theme);
+  localStorage.setItem('sp_theme', state.theme);
+  const icon = document.getElementById('theme-toggle-icon');
+  const label = document.getElementById('theme-toggle-label');
+  if (icon && label) {
+    if (state.theme === 'light') {
+      icon.textContent = '🌙';
+      label.textContent = 'Dark';
+    } else {
+      icon.textContent = '☀️';
+      label.textContent = 'Light';
+    }
+  }
+}
+
+// ── Navigation ──
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelector(`[data-page="${page}"]`).classList.add('active');
+  if (page === 'schedule') renderWeek();
+  if (page === 'insights') renderInsights();
+  renderAll();
+}
+
+// ── Modal ──
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('f-name').focus();
+  const tomorrow = new Date(); tomorrow.setDate(tomorrow.getDate() + 14);
+  document.getElementById('f-date').value = tomorrow.toISOString().split('T')[0];
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+function closeModalOnBg(e) { if (e.target.id === 'modal') closeModal(); }
+
+document.querySelectorAll('.color-option').forEach(opt => {
+  opt.addEventListener('click', function() {
+    document.querySelectorAll('.color-option').forEach(o => o.classList.remove('selected'));
+    this.classList.add('selected');
+    state.selectedColor = this.dataset.color;
+  });
+});
+
+// ── Add Subject ──
+function addSubject() {
+  const name = document.getElementById('f-name').value.trim();
+  const date = document.getElementById('f-date').value;
+  const hours = parseInt(document.getElementById('f-hours').value);
+  const diff = document.getElementById('f-diff').value;
+  if (!name) return showToast('Please enter a subject name', 'error');
+  if (!date) return showToast('Please select an exam date', 'error');
+  if (!hours || hours < 1) return showToast('Enter valid study hours', 'error');
+
+  const subject = {
+    id: Date.now().toString(),
+    name, date, hours, diff,
+    color: state.selectedColor,
+    completedHours: 0
+  };
+  state.subjects.push(subject);
+  save();
+  closeModal();
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-hours').value = '';
+  renderAll();
+  showToast(`${name} added!`, 'success');
+}
+
+function deleteSubject(id) {
+  state.subjects = state.subjects.filter(s => s.id !== id);
+  state.plan = state.plan.filter(p => p.subjectId !== id);
+  save();
+  renderAll();
+  showToast('Subject removed');
+}
+
+// ── AI Plan Generation ──
+// Core algorithm:
+// 1. For each subject, compute urgency = difficulty_weight / max(1, daysLeft)
+// 2. Assign daily session slots proportionally by urgency
+// 3. Apply spaced repetition: more sessions in final days
+// 4. Session types: Learn (early), Review (mid), Practice (final)
+function generatePlan() {
+  if (!state.subjects.length) return showToast('Add at least one subject first', 'error');
+
+  const DIFF_WEIGHTS = { easy: 1, medium: 1.6, hard: 2.4 };
+  const MAX_HOURS_PER_DAY = 4;
+  const SESSION_DURATION = 1; // hours per session
+  const todayDate = new Date(today());
+
+  let allSessions = [];
+
+  state.subjects.forEach(sub => {
+    const daysLeft = daysUntil(sub.date);
+    if (daysLeft <= 0) return;
+
+    const weight = DIFF_WEIGHTS[sub.diff];
+    const totalSessions = Math.ceil(sub.hours / SESSION_DURATION);
+
+    // Spaced repetition distribution
+    // Early phase: first 40% of days → 30% of sessions
+    // Mid phase: next 40% → 40% of sessions
+    // Final phase: last 20% → 30% of sessions
+    const sessionsByPhase = {
+      early: Math.ceil(totalSessions * 0.30),
+      mid:   Math.ceil(totalSessions * 0.40),
+      final: Math.max(1, Math.ceil(totalSessions * 0.30))
+    };
+
+    const earlyDays  = Math.ceil(daysLeft * 0.40);
+    const midDays    = Math.ceil(daysLeft * 0.40);
+    const finalDays  = Math.max(1, daysLeft - earlyDays - midDays);
+
+    const addSessions = (count, startOffset, phase, totalDays) => {
+      if (totalDays <= 0 || count <= 0) return;
+      const interval = Math.max(1, Math.floor(totalDays / count));
+      for (let i = 0; i < count; i++) {
+        const dayOff = startOffset + Math.min(i * interval, totalDays - 1);
+        if (dayOff >= daysLeft) break;
+        const sessionDate = new Date(todayDate);
+        sessionDate.setDate(sessionDate.getDate() + dayOff);
+        let type = 'learn';
+        if (phase === 'mid') type = 'review';
+        if (phase === 'final') type = 'practice';
+        allSessions.push({
+          id: sub.id + '_' + phase + '_' + i,
+          subjectId: sub.id,
+          subjectName: sub.name,
+          color: sub.color,
+          date: sessionDate.toISOString().split('T')[0],
+          duration: SESSION_DURATION,
+          type,
+          weight: weight * (phase === 'final' ? 1.5 : 1)
+        });
+      }
+    };
+
+    addSessions(sessionsByPhase.early, 0,         'early', earlyDays);
+    addSessions(sessionsByPhase.mid,   earlyDays,  'mid',   midDays);
+    addSessions(sessionsByPhase.final, earlyDays + midDays, 'final', finalDays);
+  });
+
+  // Respect max hours per day: spread overflow to next day
+  const sessionsByDate = {};
+  allSessions.forEach(s => {
+    if (!sessionsByDate[s.date]) sessionsByDate[s.date] = [];
+    sessionsByDate[s.date].push(s);
+  });
+
+  // Limit per day & shuffle subject variety
+  const finalSessions = [];
+  const sortedDates = Object.keys(sessionsByDate).sort();
+  const overflow = [];
+
+  sortedDates.forEach(d => {
+    const daySessions = [...overflow.splice(0), ...sessionsByDate[d]];
+    // Sort by urgency (weight desc)
+    daySessions.sort((a, b) => b.weight - a.weight);
+    let hoursToday = 0;
+    daySessions.forEach(s => {
+      if (hoursToday + s.duration <= MAX_HOURS_PER_DAY) {
+        finalSessions.push(s);
+        hoursToday += s.duration;
+      } else {
+        // push to tomorrow
+        const nxt = new Date(d);
+        nxt.setDate(nxt.getDate() + 1);
+        s.date = nxt.toISOString().split('T')[0];
+        overflow.push(s);
+      }
+    });
+  });
+
+  state.plan = finalSessions;
+  state.completedToday = [];
+  save();
+  renderAll();
+  showToast('✦ Study plan generated!', 'success');
+}
+
+// ── Mark Session ──
+function toggleSession(sessionId) {
+  const idx = state.completedToday.indexOf(sessionId);
+  if (idx === -1) {
+    state.completedToday.push(sessionId);
+    // Update subject completed hours
+    const session = state.plan.find(p => p.id === sessionId);
+    if (session) {
+      const sub = state.subjects.find(s => s.id === session.subjectId);
+      if (sub) { sub.completedHours = (sub.completedHours || 0) + session.duration; }
+    }
+    showToast('Session completed! 🎉', 'success');
+  } else {
+    state.completedToday.splice(idx, 1);
+    const session = state.plan.find(p => p.id === sessionId);
+    if (session) {
+      const sub = state.subjects.find(s => s.id === session.subjectId);
+      if (sub) { sub.completedHours = Math.max(0, (sub.completedHours || 0) - session.duration); }
+    }
+  }
+  save();
+  renderAll();
+}
+
+function startSessionTimer(name) {
+  state.linkedSessionName = name;
+  document.getElementById('pomo-subject').textContent = '📍 ' + name;
+  showToast('Timer linked to: ' + name);
+}
+
+function onSearchInput() {
+  const el = document.getElementById('global-search');
+  state.searchQuery = el ? el.value : '';
+  renderAll();
+  if (document.getElementById('page-schedule').classList.contains('active')) renderWeek();
+  if (document.getElementById('page-insights').classList.contains('active')) renderInsights();
+}
+
+function toggleTheme() {
+  state.theme = state.theme === 'light' ? 'dark' : 'light';
+  applyTheme();
+}
+
+// ── Pomodoro ──
+let pomoClock = null, pomoTotal = 25 * 60, pomoRemaining = 25 * 60, pomoRunning = false, pomoMode = 'work';
+
+const CIRCUMFERENCE = 2 * Math.PI * 58; // 364.4
+
+function setPomodoroMode(mode, minutes) {
+  pomoMode = mode;
+  pomoTotal = minutes * 60;
+  pomoRemaining = pomoTotal;
+  if (pomoClock) { clearInterval(pomoClock); pomoClock = null; pomoRunning = false; }
+  document.getElementById('pomo-start-btn').textContent = 'Start';
+  document.querySelectorAll('.pomo-mode-tab').forEach((t,i) => {
+    t.classList.toggle('active', ['work','short','long'][i] === mode);
+  });
+  const colors = { work: 'var(--gold)', short: 'var(--teal)', long: 'var(--blue)' };
+  document.getElementById('pomo-ring').style.stroke = colors[mode];
+  updatePomoDial();
+}
+
+function updatePomoDial() {
+  const pct = pomoRemaining / pomoTotal;
+  const offset = CIRCUMFERENCE * (1 - pct);
+  document.getElementById('pomo-ring').style.strokeDashoffset = offset;
+  const m = Math.floor(pomoRemaining / 60).toString().padStart(2,'0');
+  const s = (pomoRemaining % 60).toString().padStart(2,'0');
+  document.getElementById('pomo-display').textContent = `${m}:${s}`;
+}
+
+function togglePomodoro() {
+  if (pomoRunning) {
+    clearInterval(pomoClock); pomoClock = null; pomoRunning = false;
+    document.getElementById('pomo-start-btn').textContent = 'Resume';
+  } else {
+    pomoRunning = true;
+    document.getElementById('pomo-start-btn').textContent = 'Pause';
+    pomoClock = setInterval(() => {
+      pomoRemaining--;
+      if (pomoRemaining <= 0) {
+        clearInterval(pomoClock); pomoClock = null; pomoRunning = false;
+        pomoRemaining = 0;
+        updatePomoDial();
+        document.getElementById('pomo-start-btn').textContent = 'Start';
+        showToast(pomoMode === 'work' ? '⏰ Focus session complete!' : '⏰ Break done!', 'success');
+        if (pomoMode === 'work') { updateStreak(); }
+      }
+      updatePomoDial();
+    }, 1000);
+  }
+}
+
+function resetPomodoro() {
+  if (pomoClock) { clearInterval(pomoClock); pomoClock = null; }
+  pomoRunning = false;
+  pomoRemaining = pomoTotal;
+  document.getElementById('pomo-start-btn').textContent = 'Start';
+  updatePomoDial();
+}
+
+// ── Streak ──
+function updateStreak() {
+  const t = today();
+  if (state.lastStudied !== t) {
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yStr = yesterday.toISOString().split('T')[0];
+    if (state.lastStudied === yStr) {
+      state.streak++;
+    } else if (!state.lastStudied) {
+      state.streak = 1;
+    } else {
+      state.streak = 1;
+    }
+    state.lastStudied = t;
+    save();
+    document.getElementById('streak-count').textContent = state.streak;
+  }
+}
+
+// ── Render Functions ──
+function renderSidebarSubjects() {
+  const el = document.getElementById('sidebar-subjects');
+  const needle = getSearchNeedle();
+  const list = needle
+    ? state.subjects.filter(s => matchesSearch(s.name, needle))
+    : state.subjects;
+  if (!state.subjects.length) { el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:4px 12px;">No subjects yet</div>'; return; }
+  if (!list.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:4px 12px;">No matches</div>';
+    return;
+  }
+  const sorted = [...list].sort((a,b) => daysUntil(a.date) - daysUntil(b.date));
+  el.innerHTML = sorted.map(s => {
+    const days = daysUntil(s.date);
+    const cls = days <= 3 ? 'urgent' : days <= 7 ? 'soon' : '';
+    return `<div class="subject-pill">
+      <div class="subject-dot" style="background:${escapeAttr(s.color)}"></div>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(s.name)}</span>
+      <span class="days-left ${cls}">${days}d</span>
+    </div>`;
+  }).join('');
+}
+
+function renderStats() {
+  document.getElementById('stat-subjects').textContent = state.subjects.length;
+  document.getElementById('streak-count').textContent = state.streak;
+
+  const todaySessions = state.plan.filter(p => p.date === today());
+  const totalHours = todaySessions.reduce((a,b) => a + b.duration, 0);
+  document.getElementById('stat-hours').textContent = totalHours + 'h';
+  document.getElementById('stat-hours-meta').textContent = `${todaySessions.length} session${todaySessions.length !== 1 ? 's' : ''} planned`;
+
+  const done = state.completedToday.filter(id => todaySessions.find(s => s.id === id)).length;
+  document.getElementById('stat-done').textContent = done;
+  document.getElementById('stat-done-meta').textContent = `of ${todaySessions.length} today`;
+
+  // Next exam
+  const upcoming = [...state.subjects].filter(s => daysUntil(s.date) > 0).sort((a,b) => daysUntil(a.date) - daysUntil(b.date));
+  if (upcoming.length) {
+    const next = upcoming[0];
+    const d = daysUntil(next.date);
+    document.getElementById('stat-next-exam').textContent = `${d}d`;
+    document.getElementById('stat-next-exam-meta').textContent = next.name;
+  } else {
+    document.getElementById('stat-next-exam').textContent = '—';
+    document.getElementById('stat-next-exam-meta').textContent = 'no exams scheduled';
+  }
+}
+
+function renderTodaySessions() {
+  const container = document.getElementById('today-sessions');
+  const needle = getSearchNeedle();
+  let todaySessions = state.plan.filter(p => p.date === today());
+  if (needle) {
+    todaySessions = todaySessions.filter(p =>
+      matchesSearch(p.subjectName, needle) || matchesSearch(p.type, needle)
+    );
+  }
+
+  if (!state.plan.filter(p => p.date === today()).length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">📋</div>
+      <h3>No sessions yet</h3>
+      <p>Add subjects and click "Generate AI Plan" to get a personalized study schedule.</p>
+    </div>`;
+    return;
+  }
+
+  if (!todaySessions.length) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">🔍</div>
+      <h3>No matching sessions</h3>
+      <p>Try a different search or clear the search box to see all of today's sessions.</p>
+    </div>`;
+    return;
+  }
+
+  const typeLabel = { learn: 'Learn', review: 'Review', practice: 'Practice' };
+  const typeBadge = { learn: 'badge-learn', review: 'badge-review', practice: 'badge-practice' };
+
+  container.innerHTML = todaySessions.map(s => {
+    const done = state.completedToday.includes(s.id);
+    const safeId = escapeAttr(s.id);
+    const subj = escapeHtml(s.subjectName);
+    const typeL = typeLabel[s.type] || s.type;
+    return `<div class="session-card ${done ? 'done' : ''}">
+      <div class="session-check" onclick="toggleSession('${safeId}')">${done ? '✓' : ''}</div>
+      <div class="session-color-bar" style="background:${escapeAttr(s.color)}"></div>
+      <div class="session-info">
+        <div class="session-title">${subj}</div>
+        <div class="session-meta">${s.duration}h • ${escapeHtml(typeL)}</div>
+      </div>
+      <span class="session-type-badge ${typeBadge[s.type] || 'badge-learn'}">${escapeHtml(typeL)}</span>
+      <button type="button" class="session-timer-btn" data-subject="${escapeAttr(s.subjectName)}" onclick="startSessionTimer(this.getAttribute('data-subject'))">⏱</button>
+    </div>`;
+  }).join('');
+}
+
+function renderSubjectsPage() {
+  const grid = document.getElementById('subjects-grid');
+  const needle = getSearchNeedle();
+  const list = needle
+    ? state.subjects.filter(s =>
+        matchesSearch(s.name, needle) ||
+        matchesSearch(s.diff, needle) ||
+        matchesSearch(fmtDate(s.date), needle)
+      )
+    : state.subjects;
+
+  if (!state.subjects.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-state-icon">📚</div><h3>No subjects added</h3>
+      <p>Add your first subject to start building your study plan.</p>
+    </div>`;
+    return;
+  }
+
+  if (!list.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">
+      <div class="empty-state-icon">🔍</div><h3>No matching subjects</h3>
+      <p>Adjust your search or clear the field to see all subjects.</p>
+    </div>`;
+    return;
+  }
+
+  const DIFF = { easy: 'Easy', medium: 'Medium', hard: 'Hard' };
+  const DIFF_CLASS = { easy: 'diff-easy', medium: 'diff-medium', hard: 'diff-hard' };
+
+  grid.innerHTML = list.map(s => {
+    const pct = Math.min(100, Math.round(((s.completedHours || 0) / s.hours) * 100));
+    const days = daysUntil(s.date);
+    const sessionsCount = state.plan.filter(p => p.subjectId === s.id).length;
+    const safeId = escapeAttr(s.id);
+    const nameEsc = escapeHtml(s.name);
+    return `<div class="subject-card">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${escapeAttr(s.color)};border-radius:12px 12px 0 0;"></div>
+      <div class="subject-card-header">
+        <div>
+          <div class="subject-name">${nameEsc}</div>
+          <div class="subject-exam-date">Exam: ${escapeHtml(fmtDate(s.date))} · ${days > 0 ? days + 'd left' : 'Past'}</div>
+        </div>
+        <span class="subject-difficulty-badge ${DIFF_CLASS[s.diff]}">${DIFF[s.diff]}</span>
+      </div>
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" style="width:${pct}%;background:${escapeAttr(s.color)};"></div>
+      </div>
+      <div class="subject-stats">
+        <span>${s.completedHours || 0}h / ${s.hours}h complete</span>
+        <span>${pct}%</span>
+      </div>
+      <div class="subject-stats" style="margin-bottom:14px;">
+        <span>${sessionsCount} sessions planned</span>
+        <span style="color:${days <= 3 ? 'var(--coral)' : days <= 7 ? 'var(--gold)' : 'var(--text3)'};">${days > 0 ? days + ' days' : 'Past'}</span>
+      </div>
+      <div class="subject-actions">
+        <button type="button" class="subject-action-btn" data-toast-subject="${escapeAttr(s.name)}" onclick="showToast(this.getAttribute('data-toast-subject') + ' details coming soon')">View Plan</button>
+        <button type="button" class="subject-action-btn danger" onclick="deleteSubject('${safeId}')">Remove</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderWeek() {
+  const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const todayD = new Date();
+  const startOfWeek = new Date(todayD);
+  const dayOfWeek = startOfWeek.getDay();
+  startOfWeek.setDate(startOfWeek.getDate() - dayOfWeek + state.weekOffset * 7);
+
+  const endOfWeek = new Date(startOfWeek);
+  endOfWeek.setDate(endOfWeek.getDate() + 6);
+
+  document.getElementById('week-range-label').textContent =
+    startOfWeek.toLocaleDateString('en-US', {month:'short',day:'numeric'}) + ' – ' +
+    endOfWeek.toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric'});
+
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML = '';
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(d.getDate() + i);
+    const dStr = d.toISOString().split('T')[0];
+    const isToday = dStr === today();
+    const daySessions = state.plan.filter(p => p.date === dStr);
+
+    const col = document.createElement('div');
+    col.className = 'day-col' + (isToday ? ' today' : '');
+    col.innerHTML = `<div class="day-header">
+        <div class="day-name">${DAYS[d.getDay()]}</div>
+        <div class="day-num">${d.getDate()}</div>
+      </div>
+      <div class="day-sessions">
+        ${daySessions.map(s => `
+          <div class="cal-session" style="background:${s.color}22;color:${s.color};border-left:2px solid ${s.color};">
+            ${s.subjectName.slice(0,12)}<br>${s.type}
+          </div>`).join('')}
+        ${!daySessions.length ? `<div style="font-size:10px;color:var(--text3);padding:4px 2px;">Free</div>` : ''}
+      </div>`;
+    grid.appendChild(col);
+  }
+}
+
+function shiftWeek(dir) {
+  state.weekOffset += dir;
+  renderWeek();
+}
+
+function renderInsights() {
+  const list = document.getElementById('insights-list');
+  if (!state.subjects.length) {
+    list.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">🧠</div><h3>Add subjects to get insights</h3>
+      <p>Once you add subjects and generate a plan, your AI tutor will give you personalized study tips.</p>
+    </div>`;
+    return;
+  }
+
+  const insights = generateInsights();
+  list.innerHTML = insights.map(ins => `
+    <div class="insight-card" style="border-left-color:${ins.color};">
+      <div class="insight-icon">${ins.icon}</div>
+      <div class="insight-text">${ins.text}</div>
+    </div>`).join('');
+}
+
+function generateInsights() {
+  const insights = [];
+  const sorted = [...state.subjects].sort((a,b) => daysUntil(a.date) - daysUntil(b.date));
+
+  sorted.forEach(s => {
+    const days = daysUntil(s.date);
+    const pct = Math.min(100, Math.round(((s.completedHours || 0) / s.hours) * 100));
+    const remaining = s.hours - (s.completedHours || 0);
+
+    if (days <= 3 && days > 0) {
+      insights.push({ icon: '🚨', color: 'var(--coral)',
+        text: `<strong>${s.name}</strong> exam is in <strong>${days} day${days > 1 ? 's' : ''}</strong>! Focus on practice problems and revision. Avoid new topics at this stage.` });
+    } else if (days <= 7 && days > 3) {
+      insights.push({ icon: '⚡', color: 'var(--gold)',
+        text: `<strong>${s.name}</strong> is coming up in <strong>${days} days</strong>. Switch to active recall — try practice tests instead of re-reading notes.` });
+    }
+
+    if (pct < 30 && days < 14 && days > 0) {
+      insights.push({ icon: '📈', color: 'var(--coral)',
+        text: `You're only <strong>${pct}%</strong> through <strong>${s.name}</strong> with ${days} days left. You need ~<strong>${Math.ceil(remaining / Math.max(1, days))}h/day</strong> to cover all material.` });
+    }
+
+    if (s.diff === 'hard') {
+      insights.push({ icon: '🧩', color: 'var(--purple)',
+        text: `<strong>${s.name}</strong> is marked hard. Use the <strong>Feynman Technique</strong>: explain concepts out loud as if teaching someone else. This exposes gaps faster than reading.` });
+    }
+
+    if (s.diff === 'easy' && days > 10) {
+      insights.push({ icon: '💡', color: 'var(--teal)',
+        text: `<strong>${s.name}</strong> has ${days} days until exam and is rated easy. Consider reducing session frequency and reallocating time to harder subjects.` });
+    }
+  });
+
+  // General insights
+  if (state.subjects.length >= 3) {
+    insights.push({ icon: '🔄', color: 'var(--blue)',
+      text: `With <strong>${state.subjects.length} subjects</strong>, use <strong>interleaved practice</strong>: mix subjects within a session rather than spending full days on one. This improves long-term retention by 40%.` });
+  }
+
+  const todayTotal = state.plan.filter(p => p.date === today()).reduce((a,b) => a+b.duration, 0);
+  if (todayTotal > 4) {
+    insights.push({ icon: '😴', color: 'var(--teal)',
+      text: `You have <strong>${todayTotal}h of study</strong> planned today. Remember: sleep consolidates memory. Take a 10-min break every 50 minutes and prioritize 7-8 hours of sleep for retention.` });
+  }
+
+  if (state.streak >= 3) {
+    insights.push({ icon: '🔥', color: 'var(--gold)',
+      text: `<strong>${state.streak}-day study streak!</strong> Consistency is the most powerful learning strategy. Keep it up — try to study at the same time each day to build habit.` });
+  }
+
+  if (!insights.length) {
+    insights.push({ icon: '✅', color: 'var(--teal)',
+      text: `<strong>Looking good!</strong> Your subjects are well-paced. Generate an AI plan from the dashboard to start tracking your sessions.` });
+  }
+
+  return insights;
+}
+
+// ── Init ──
+function renderAll() {
+  renderSidebarSubjects();
+  renderStats();
+  renderTodaySessions();
+  renderSubjectsPage();
+}
+
+// Date & greeting
+function initMeta() {
+  const h = new Date().getHours();
+  const greet = h < 12 ? 'morning' : h < 17 ? 'afternoon' : 'evening';
+  document.getElementById('greeting-time').textContent = greet;
+  document.getElementById('today-date').textContent = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+initMeta();
+updatePomoDial();
+renderAll();
+</script>
+</body>
+</html>
